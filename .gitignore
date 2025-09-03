@@ -1,0 +1,22 @@
+# Build output
+bin/
+obj/
+
+# Visual Studio files
+.vscode/
+.vs/
+.editorconfig
+
+# Sample test file
+src/ProgramTest.cs
+
+# Test coverage files
+/tests/coveragereport/
+/tests/TestResults
+CoverageReport
+
+upload_scripts
+
+nuget.config
+**/.DS_Store
+*addlicence*

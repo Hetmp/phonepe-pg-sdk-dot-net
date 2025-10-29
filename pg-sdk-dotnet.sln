@@ -1,0 +1,34 @@
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pg-sdk-dotnet", "src\pg-sdk-dotnet.csproj", "{BF89D167-30EC-4C9A-AA09-F78CDA8AEE3A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tests", "tests\tests.csproj", "{E4048773-E6D8-415A-8E84-01259B97D16B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F32732B8-44CD-4EC9-86DF-88CD31B78DB3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F32732B8-44CD-4EC9-86DF-88CD31B78DB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F32732B8-44CD-4EC9-86DF-88CD31B78DB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F32732B8-44CD-4EC9-86DF-88CD31B78DB3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF89D167-30EC-4C9A-AA09-F78CDA8AEE3A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF89D167-30EC-4C9A-AA09-F78CDA8AEE3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF89D167-30EC-4C9A-AA09-F78CDA8AEE3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF89D167-30EC-4C9A-AA09-F78CDA8AEE3A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4048773-E6D8-415A-8E84-01259B97D16B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4048773-E6D8-415A-8E84-01259B97D16B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4048773-E6D8-415A-8E84-01259B97D16B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4048773-E6D8-415A-8E84-01259B97D16B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A1520338-37D4-4629-A5D9-6023601F6C90}
+	EndGlobalSection
+EndGlobal

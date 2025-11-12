@@ -9,7 +9,7 @@
 Install the dependency via the CLI:
 
 ```bash
-dotnet add package phonepe-pg-sdk-dotnet --version 2.1.0
+dotnet add package phonepe-pg-sdk-dotnet --version 2.1.1
 ```
 
 ---
@@ -157,6 +157,7 @@ var amount = 100;
 var sdkOrderRequest = CreateSdkOrderRequest.StandardCheckoutBuilder()
     .SetMerchantOrderId(merchantOrderID)
     .SetAmount(amount)
+    .SetDisablePaymentRetry(true)
     .SetRedirectUrl(redirectUrl)
     .Build();
 

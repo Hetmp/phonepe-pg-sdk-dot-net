@@ -76,4 +76,84 @@ public class CreateOrderTests : BaseSetupWithOAuth
         Assert.That(actual.Token, Is.EqualTo("token"));
     }
 
+    [Test, Order(2)]
+    public async Task StandardCheckout_CreateOrder_WithDisablePaymentRetry_True()
+    {
+        string url = "/checkout/v2/sdk/order";
+
+        OAuthSetup();
+
+        var createOrderRequest = CreateSdkOrderRequest.StandardCheckoutBuilder()
+            .SetAmount(100)
+            .SetMerchantOrderId("merchantOrderId")
+            .SetDisablePaymentRetry(true)
+            .Build();
+
+        var createOrderResponse = new CreateSdkOrderResponse
+        {
+            OrderId = OrderId,
+            State = "PENDING",
+            ExpireAt = 238462442,
+            Token = "token"
+        };
+
+        var headers = GetHeadersForPostReq();
+
+        AddStubForPostRequest(
+            url,
+            headers,
+            createOrderRequest,
+            200,
+            new Dictionary<string, string>(),
+            createOrderResponse
+        );
+
+        var actual = await standardCheckoutClient.CreateSdkOrder(createOrderRequest);
+
+        Assert.That(actual.OrderId, Is.EqualTo(OrderId));
+        Assert.That(actual.State, Is.EqualTo("PENDING"));
+        Assert.That(actual.Token, Is.EqualTo("token"));
+        Assert.That(createOrderRequest.DisablePaymentRetry, Is.True);
+    }
+
+    [Test, Order(3)]
+    public async Task StandardCheckout_CreateOrder_WithDisablePaymentRetry_False()
+    {
+        string url = "/checkout/v2/sdk/order";
+
+        OAuthSetup();
+
+        var createOrderRequest = CreateSdkOrderRequest.StandardCheckoutBuilder()
+            .SetAmount(100)
+            .SetMerchantOrderId("merchantOrderId")
+            .SetDisablePaymentRetry(false)
+            .Build();
+
+        var createOrderResponse = new CreateSdkOrderResponse
+        {
+            OrderId = OrderId,
+            State = "PENDING",
+            ExpireAt = 238462442,
+            Token = "token"
+        };
+
+        var headers = GetHeadersForPostReq();
+
+        AddStubForPostRequest(
+            url,
+            headers,
+            createOrderRequest,
+            200,
+            new Dictionary<string, string>(),
+            createOrderResponse
+        );
+
+        var actual = await standardCheckoutClient.CreateSdkOrder(createOrderRequest);
+
+        Assert.That(actual.OrderId, Is.EqualTo(OrderId));
+        Assert.That(actual.State, Is.EqualTo("PENDING"));
+        Assert.That(actual.Token, Is.EqualTo("token"));
+        Assert.That(createOrderRequest.DisablePaymentRetry, Is.False);
+    }
+
 }

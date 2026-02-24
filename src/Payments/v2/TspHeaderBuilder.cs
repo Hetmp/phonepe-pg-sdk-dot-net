@@ -22,9 +22,9 @@ namespace pg_sdk_dotnet.Payments.v2;
 /// </summary>
 public enum TspSourceChannel
 {
-    Web,
-    Android,
-    Ios
+    Web = 1,
+    Android = 2,
+    Ios = 3,
 }
 
 /// <summary>
@@ -62,7 +62,7 @@ public class TspHeaderMetadata
     /// The integration channel (Web, Android, iOS).
     /// Mandatory for TSP flows.
     /// </summary>
-    public required TspSourceChannel SourceChannel { get; set; }
+    public TspSourceChannel SourceChannel { get; set; }
 
     /// <summary>
     /// End merchant's Merchant ID for TSP payment.
@@ -156,15 +156,13 @@ public static class TspHeaderBuilder
     /// </summary>
     public static Dictionary<string, string> BuildHeaders(TspHeaderMetadata? metadata)
     {
-        if (metadata == null)
-            throw new ArgumentNullException(nameof(metadata));
+        ArgumentNullException.ThrowIfNull(metadata);
 
         ValidateMetadata(metadata);
 
         var headers = new Dictionary<string, string>
         {
-            { X_MERCHANT_ID, metadata.MerchantId },
-            { X_SOURCE, "API" }
+            { X_MERCHANT_ID, metadata.MerchantId }
         };
 
         // Add channel-specific headers
@@ -173,7 +171,7 @@ public static class TspHeaderBuilder
             TspSourceChannel.Web => BuildWebHeaders(headers, metadata),
             TspSourceChannel.Android => BuildAndroidHeaders(headers, metadata),
             TspSourceChannel.Ios => BuildIosHeaders(headers, metadata),
-            _ => throw new ArgumentException($"Unknown source channel: {metadata.SourceChannel}")
+            _ => headers
         };
     }
 
@@ -195,6 +193,7 @@ public static class TspHeaderBuilder
         if (string.IsNullOrEmpty(metadata.MerchantIp))
             throw new ArgumentException("MerchantIp is required for Web channel", nameof(metadata.MerchantIp));
 
+        baseHeaders[X_SOURCE] = "API";        
         baseHeaders[X_SOURCE_CHANNEL] = "web";
         baseHeaders[X_BROWSER_FINGERPRINT] = metadata.BrowserFingerprint;
         baseHeaders[USER_AGENT] = metadata.UserAgent;
@@ -221,6 +220,7 @@ public static class TspHeaderBuilder
         if (string.IsNullOrEmpty(metadata.MerchantIp))
             throw new ArgumentException("MerchantIp is required for Android channel", nameof(metadata.MerchantIp));
 
+        baseHeaders[X_SOURCE] = "API";
         baseHeaders[X_SOURCE_CHANNEL] = "android";
         baseHeaders[X_SOURCE_CHANNEL_VERSION] = metadata.ChannelVersion;
         baseHeaders[X_MERCHANT_APP_ID] = metadata.MerchantAppId;
@@ -245,6 +245,7 @@ public static class TspHeaderBuilder
         if (string.IsNullOrEmpty(metadata.MerchantIp))
             throw new ArgumentException("MerchantIp is required for iOS channel", nameof(metadata.MerchantIp));
 
+        baseHeaders[X_SOURCE] = "API";
         baseHeaders[X_SOURCE_CHANNEL] = "ios";
         baseHeaders[X_SOURCE_CHANNEL_VERSION] = metadata.ChannelVersion;
         baseHeaders[X_MERCHANT_APP_ID] = metadata.MerchantAppId;
@@ -271,7 +272,7 @@ public static class TspHeaderBuilder
         {
             TspRedirectionType.PartnerRedirection => "PARTNER_REDIRECTION",
             TspRedirectionType.MerchantRedirection => "MERCHANT_REDIRECTION",
-            _ => throw new ArgumentException($"Unknown redirection type: {redirectionType}")
+            _ => "MERCHANT_REDIRECTION"
         };
     }
 }

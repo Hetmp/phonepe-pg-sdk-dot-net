@@ -302,8 +302,7 @@ public sealed class CustomCheckoutClient
     {
         return new Dictionary<string, string>
         {
-            { Headers.CONTENT_TYPE, Headers.APPLICATION_JSON },
-            { Headers.SOURCE, Headers.INTEGRATION },
+            { Headers.CONTENT_TYPE, Headers.APPLICATION_JSON }
         };
     }
 

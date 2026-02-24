@@ -302,8 +302,7 @@ public sealed class StandardCheckoutClient
     {
         return new Dictionary<string, string>
         {
-            { Headers.CONTENT_TYPE, Headers.APPLICATION_JSON },
-            { Headers.SOURCE, Headers.INTEGRATION },
+            { Headers.CONTENT_TYPE, Headers.APPLICATION_JSON }
         };
     }
 
@@ -341,7 +340,7 @@ public sealed class StandardCheckoutClient
         foreach (var header in tspHeaders)
         {
             mergedHeaders[header.Key] = header.Value;
-        }
+        }        
 
         return mergedHeaders;
     }

@@ -38,7 +38,7 @@ public abstract class BaseClient
 
         this._logger = loggerFactory.CreateLogger<BaseClient>();
 
-        this._envConfig = EnvConfig.GetBaseUrls(env); ;
+        this._envConfig = EnvConfig.GetBaseUrls(env);
 
         this._httpClient = new();
 

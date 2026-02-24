@@ -14,57 +14,88 @@
 * limitations under the License.
 */
 
-using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Text.Json;
 
 namespace pg_sdk_dotnet.Payments.v2;
 
-public class StandardCheckoutClient : BaseClient
+/// <summary>
+/// StandardCheckoutClient handles all standard checkout payment operations.
+/// No longer inherits BaseClient. Instead, delegates auth/token handling to shared BaseClientContext.
+/// This is a lightweight request handler focused on payment-specific logic.
+/// 
+/// Features:
+/// - Automatic header management based on account type and method
+/// - Optional TSP headers for partner accounts
+/// - SDK headers automatically added for SDK methods
+/// </summary>
+public sealed class StandardCheckoutClient
 {
-    private static StandardCheckoutClient? _client;
-    private static readonly object _lock = new();
+    private readonly AccountType _accountType;
+    private readonly BaseClientContext _context;
     private readonly ILogger<StandardCheckoutClient> _logger;
     private readonly Dictionary<string, string> _headers;
 
     private StandardCheckoutClient(
-        string clientId,
-        string clientSecret,
-        int clientVersion,
-        Env env,
-        ILoggerFactory? loggerFactory
-    ) : base(clientId, clientSecret, clientVersion, env, loggerFactory ?? NullLoggerFactory.Instance)
+        BaseClientContext context,
+        ILoggerFactory? loggerFactory = null,
+        AccountType accountType = AccountType.DirectMerchant
+    )
     {
-        this._logger = (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<StandardCheckoutClient>();
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+        this._logger = (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<StandardCheckoutClient>();                
         this._headers = PrepareHeaders();
+        _accountType = accountType;
     }
 
-    /*
-     * Returns a singleton instance of StandardCheckoutClient.
-     * Ensures only one instance is created with the same parameters.
-     */
+    /// <summary>
+    /// Gets or creates a StandardCheckoutClient instance.
+    /// Account type should be configured via BaseClientContext.GetInstance().
+    /// </summary>
     public static StandardCheckoutClient GetInstance(
         string clientId,
         string clientSecret,
         int clientVersion,
         Env env,
-        ILoggerFactory? loggerFactory = null
+        ILoggerFactory? loggerFactory = null,
+        AccountType accountType = AccountType.DirectMerchant
     )
     {
-        return new StandardCheckoutClient(clientId, clientSecret, clientVersion, env, loggerFactory);
+        // Initialize the shared context (singleton) with account type
+        var context = BaseClientContext.GetInstance(
+            clientId,
+            clientSecret,
+            clientVersion,
+            env,
+            loggerFactory ?? NullLoggerFactory.Instance
+        );
+
+        // Return a new instance using the shared context
+        return new StandardCheckoutClient(context, loggerFactory, accountType);
     }
+
     /*
      * Initiates a standard checkout payment.
+     * Headers are automatically managed based on account type and request parameters.
      */
-    public async Task<StandardCheckoutPayResponse> Pay(StandardCheckoutPayRequest payRequest)
+    public async Task<StandardCheckoutPayResponse> Pay(StandardCheckoutPayRequest payRequest, TspHeaderMetadata? tspMetadata = null)
     {
         var url = StandardCheckoutConstants.PAY_API;
+        var headers = PreparePayHeaders();
+
+        // Merge TSP headers if partner account and metadata provided
+        if (_accountType == AccountType.Partner)
+        {
+            headers = MergeTspHeaders(headers, tspMetadata);
+        }
+
         try
         {
-            var response = await RequestViaAuthRefreshAsync<StandardCheckoutPayResponse, StandardCheckoutPayRequest>(
+            var response = await _context.RequestViaAuthRefreshAsync<StandardCheckoutPayResponse, StandardCheckoutPayRequest>(
                 HttpMethodType.POST,
                 url,
-                this._headers,
+                headers,
                 Headers.APPLICATION_JSON,
                 payRequest
             );
@@ -80,16 +111,25 @@ public class StandardCheckoutClient : BaseClient
     /*
      * Fetches the order status.
      */
-    public async Task<OrderStatusResponse> GetOrderStatus(string merchantOrderId, bool details = false)
+    public async Task<OrderStatusResponse> GetOrderStatus(string merchantOrderId, bool details = false, TspHeaderMetadata? tspMetadata = null)
     {
         var url = StandardCheckoutConstants.ORDER_STATUS_API.Replace("{ORDER_ID}", merchantOrderId);
         var queryParams = new Dictionary<string, string> { { StandardCheckoutConstants.ORDER_DETAILS, details.ToString().ToLower() } };
+
+        var headers = PreparePayHeaders();
+
+        // Merge TSP headers if partner account and metadata provided
+        if (_accountType == AccountType.Partner)
+        {
+            headers = MergeTspHeaders(headers, tspMetadata);
+        }
+
         try
         {
-            var response = await RequestViaAuthRefreshAsync<OrderStatusResponse, object>(
+            var response = await _context.RequestViaAuthRefreshAsync<OrderStatusResponse, object>(
                 HttpMethodType.GET,
                 url,
-                this._headers,
+                headers,
                 Headers.APPLICATION_JSON,
                 null,
                 queryParams
@@ -108,15 +148,24 @@ public class StandardCheckoutClient : BaseClient
     /*
     * Initiates a refund for a completed order.
     */
-    public async Task<RefundResponse> Refund(RefundRequest refundRequest)
+    public async Task<RefundResponse> Refund(RefundRequest refundRequest, TspHeaderMetadata? tspMetadata = null)
     {
         var url = StandardCheckoutConstants.REFUND_API;
+
+        var headers = PreparePayHeaders();
+
+        // Merge TSP headers if partner account and metadata provided
+        if (_accountType == AccountType.Partner)
+        {
+            headers = MergeTspHeaders(headers, tspMetadata);
+        }
+
         try
         {
-            var response = await RequestViaAuthRefreshAsync<RefundResponse, RefundRequest>(
+            var response = await _context.RequestViaAuthRefreshAsync<RefundResponse, RefundRequest>(
                 HttpMethodType.POST,
                 url,
-                this._headers,
+                headers,
                 Headers.APPLICATION_JSON,
                 refundRequest
             );
@@ -133,15 +182,24 @@ public class StandardCheckoutClient : BaseClient
     /*
     * Fetches the status of a refund.
     */
-    public async Task<RefundStatusResponse> GetRefundStatus(string refundId)
+    public async Task<RefundStatusResponse> GetRefundStatus(string refundId, TspHeaderMetadata? tspMetadata = null)
     {
         var url = StandardCheckoutConstants.REFUND_STATUS_API.Replace("{REFUND_ID}", refundId);
+
+        var headers = PreparePayHeaders();
+
+        // Merge TSP headers if partner account and metadata provided
+        if (_accountType == AccountType.Partner)
+        {
+            headers = MergeTspHeaders(headers, tspMetadata);
+        }
+
         try
         {
-            var response = await RequestViaAuthRefreshAsync<RefundStatusResponse, object>(
+            var response = await _context.RequestViaAuthRefreshAsync<RefundStatusResponse, object>(
                 HttpMethodType.GET,
                 url,
-                this._headers,
+                headers,
                 Headers.APPLICATION_JSON
             );
 
@@ -157,15 +215,24 @@ public class StandardCheckoutClient : BaseClient
     /*
     * Fetches the status of a transaction.
     */
-    public async Task<OrderStatusResponse> GetTransactionStatus(string transactionId)
+    public async Task<OrderStatusResponse> GetTransactionStatus(string transactionId, TspHeaderMetadata? tspMetadata = null)
     {
         var url = StandardCheckoutConstants.TRANSACTION_STATUS_API.Replace("{TRANSACTION_ID}", transactionId);
+
+        var headers = PreparePayHeaders();
+
+        // Merge TSP headers if partner account and metadata provided
+        if (_accountType == AccountType.Partner)
+        {
+            headers = MergeTspHeaders(headers, tspMetadata);
+        }
+
         try
         {
-            var response = await RequestViaAuthRefreshAsync<OrderStatusResponse, object>(
+            var response = await _context.RequestViaAuthRefreshAsync<OrderStatusResponse, object>(
                 HttpMethodType.GET,
                 url,
-                this._headers,
+                headers,
                 Headers.APPLICATION_JSON
             );
 
@@ -180,16 +247,20 @@ public class StandardCheckoutClient : BaseClient
 
     /*
     * Creates an SDK order for integration.
+    * Automatically includes SDK-specific headers.
     */
     public async Task<CreateSdkOrderResponse> CreateSdkOrder(CreateSdkOrderRequest sdkRequest)
     {
         var url = StandardCheckoutConstants.CREATE_ORDER_API;
         try
         {
-            var response = await RequestViaAuthRefreshAsync<CreateSdkOrderResponse, CreateSdkOrderRequest>(
+            // SDK order creation always includes SDK headers
+            var headers = PreparePayHeaders(addSdkHeaders: true);
+
+            var response = await _context.RequestViaAuthRefreshAsync<CreateSdkOrderResponse, CreateSdkOrderRequest>(
                 HttpMethodType.POST,
                 url,
-                this._headers,
+                headers,
                 Headers.APPLICATION_JSON,
                 sdkRequest
             );
@@ -225,7 +296,7 @@ public class StandardCheckoutClient : BaseClient
     }
 
     /*
-     * Prepares default headers.
+     * Prepares default headers specific to standard checkout.
      */
     private static Dictionary<string, string> PrepareHeaders()
     {
@@ -233,10 +304,45 @@ public class StandardCheckoutClient : BaseClient
         {
             { Headers.CONTENT_TYPE, Headers.APPLICATION_JSON },
             { Headers.SOURCE, Headers.INTEGRATION },
-            { Headers.SOURCE_VERSION, Headers.API_VERSION},
-            { Headers.SOURCE_PLATFORM, Headers.SDK_TYPE},
-            { Headers.SOURCE_PLATFORM_VERSION, Headers.SDK_VERSION}
         };
     }
 
+    /*
+     * Prepares headers for pay/SDK order operations.
+     * Conditionally adds SDK-specific headers based on method type.
+     */
+    private Dictionary<string, string> PreparePayHeaders(bool addSdkHeaders = false)
+    {
+        var headers = new Dictionary<string, string>(_headers);
+
+        // Add SDK headers when explicitly requested (for SDK-based payment flows).
+
+        if (addSdkHeaders)
+        {
+            headers[Headers.SOURCE_VERSION] = Headers.API_VERSION;
+            headers[Headers.SOURCE_PLATFORM] = Headers.SDK_TYPE;
+            headers[Headers.SOURCE_PLATFORM_VERSION] = Headers.SDK_VERSION;
+        }
+
+        return headers;
+    }
+
+    /*
+     * Merges standard headers with TSP-specific dynamic headers.
+     * TSP headers are optional and request-specific based on integration channel.
+     */
+    private static Dictionary<string, string> MergeTspHeaders(
+        Dictionary<string, string> standardHeaders,
+        TspHeaderMetadata? tspMetadata)
+    {
+        var mergedHeaders = new Dictionary<string, string>(standardHeaders);
+        var tspHeaders = TspHeaderBuilder.BuildHeaders(tspMetadata);
+
+        foreach (var header in tspHeaders)
+        {
+            mergedHeaders[header.Key] = header.Value;
+        }
+
+        return mergedHeaders;
+    }
 }

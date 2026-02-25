@@ -18,5 +18,7 @@ namespace pg_sdk_dotnet.Common.Http;
 public enum HttpMethodType
 {
     GET,
-    POST
+    POST,
+    PUT,
+    DELETE
 }

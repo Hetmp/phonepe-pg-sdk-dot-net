@@ -213,6 +213,8 @@ public class HttpCommand<T, R>
             {
                 HttpMethodType.POST => HttpMethod.Post,
                 HttpMethodType.GET => HttpMethod.Get,
+                HttpMethodType.PUT => HttpMethod.Put,
+                HttpMethodType.DELETE => HttpMethod.Delete,
                 _ => throw new PhonePeException(405, "Method Not Supported")
             },
             Content = content

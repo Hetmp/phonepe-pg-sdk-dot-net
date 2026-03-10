@@ -144,8 +144,10 @@ public class TokenService
             return false;
         }
 
-        var currentTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var reloadTime = _cachedToken.IssuedAt + (_cachedToken.ExpiresAt - _cachedToken.IssuedAt) / 2;
+        var bufferSeconds = 300;
+
+        var currentTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();        
+        var reloadTime = _cachedToken.ExpiresAt - bufferSeconds;
 
         return currentTime < reloadTime;
     }
